@@ -6,17 +6,54 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/core.hpp>
+#include <QApplication>
+#include <QPushButton>
+#include <QImage>
+#include <QPixmap>
 #include "DetectSkin.h"
 #include "BackRemover.h"
 #include "DetectFace.h"
 #include "CountFinger.h"
+#include "Interface.h"
 
 using namespace cv;
 using namespace std;
 
+#define WINDOW_WIDTH  1280
+#define WINDOW_HEIGHT  720
+#define BUTTON_WIDTH   150
+#define BUTTON_HEIGHT   50
+#define BUTTON_POS_X  1000
+#define BUTTON_POS_Y   100
+
+// convert Mat to QImage
+QImage MatToQImage(const Mat &mat) {
+    if (mat.type() == CV_8UC1) { // Grayscale
+        QImage img(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_Grayscale8);
+        return img.copy(); 
+    } else if (mat.type() == CV_8UC3) { // BGR
+        QImage img(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_BGR888);
+        return img.copy(); 
+    } else if (mat.type() == CV_8UC4) { // BGRA
+        QImage img(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_ARGB32);
+        return img.copy(); 
+    } else {
+        // Formato não suportado
+        return QImage();
+    }
+}
 
 
-int main(){
+
+int main(int argc, char** argv){
+	// Start Qt app
+	QApplication app(argc, argv);
+
+	// Start the main window
+	Interface main_window;
+	main_window.show();
+
+
 	// Open camera
 	VideoCapture capture(0);
 
@@ -39,6 +76,9 @@ int main(){
 
 	// Finger Count
 	CountFinger fgCounter;
+
+	// White Board
+	Mat board = Mat::ones(Size(1280,720),CV_8UC1);
 
 
 	while(1){
@@ -79,6 +119,18 @@ int main(){
 		//resize(fgCount,fgCount,Size(854,480));
 		imshow("Output", fgCount);
 
+		// resize the images
+		resize(frame,frame,Size(426,240));
+		resize(hdMask,hdMask,Size(426,240));
+		resize(fgCount,fgCount,Size(426,240));
+		resize(board,board,Size(426,240));
+
+		// set the images on the main window
+		main_window.setCamImg(MatToQImage(frame));
+		main_window.setProcessImg(MatToQImage(hdMask));
+		main_window.setOutPutImg(MatToQImage(fgCount));
+		main_window.setBoardImg(MatToQImage(board));
+
 				
 		//get the input from the keyboard
         int keyboard = waitKey(30);
@@ -92,7 +144,7 @@ int main(){
 	}
 
 
-	return 0;
+	return app.exec();
 }
 
 
