@@ -1,0 +1,289 @@
+#include "Interface.h"
+#include <QApplication>
+#include <QPushButton>
+#include <QImage>
+#include <QPixmap>
+
+#define WINDOW_WIDTH  1280
+#define WINDOW_HEIGHT  720
+#define BUTTON_WIDTH   150
+#define BUTTON_HEIGHT   50
+#define BUTTON_POS_X  1000
+#define BUTTON_POS_Y   100
+
+Interface::Interface(QWidget *parent) :
+    QWidget(parent){
+    // Set size of the window
+    setFixedSize(WINDOW_WIDTH,WINDOW_HEIGHT);
+
+    // Create and position the button
+    calibrate_color = new QPushButton("Calibrate Color", this);
+    calibrate_back = new QPushButton("Calibrate Background", this);
+
+    calibrate_color->setGeometry(BUTTON_POS_X,BUTTON_POS_Y,BUTTON_WIDTH,BUTTON_HEIGHT);
+    calibrate_back->setGeometry(BUTTON_POS_X,BUTTON_POS_Y + 100,BUTTON_WIDTH,BUTTON_HEIGHT);
+
+
+    // Create the text streams
+    state_text = new QLabel("Não calibrado", this);
+    img1_text = new QLabel("Imagem real", this);
+    img2_text = new QLabel("Imagem processada", this);
+    img3_text = new QLabel("Imagem Final", this);
+    img4_text = new QLabel("Quadro branco", this);
+    /*cam_img = new QLabel("", this);
+    pro_img = new QLabel("", this);
+    out_img = new QLabel("", this);
+    boa_img = new QLabel("", this);*/
+
+    // Set the positions
+    state_text->move(1000, 50);
+    img1_text->move(100, 50);
+    img2_text->move(600, 50);
+    img3_text->move(100, 400);
+    img4_text->move(600, 400);
+    //cam_img->move(120,50);
+    //pro_img->move(620,50);
+    //out_img->move(120,400);
+    //boa_img->move(620,400);
+    
+
+}
+
+/*
+void Interface::setCamImg(QImage img){
+    cam_img->setPixmap(QPixmap::fromImage(img));
+}
+
+void Interface::setProcessImg(QImage img){
+    pro_img->setPixmap(QPixmap::fromImage(img));
+}
+
+void Interface::setOutPutImg(QImage img){
+    out_img->setPixmap(QPixmap::fromImage(img));
+}
+
+void Interface::setBoardImg(QImage img){
+    boa_img->setPixmap(QPixmap::fromImage(img));
+}
+
+*/
+
+
+
+
+
+
+
+
+#ifndef INTERFACE_H
+#define INTERCACE_H
+
+#include <QApplication>
+#include <QPushButton>
+#include <QWidget>
+#include <QLabel>
+
+#define WINDOW_WIDTH  1280
+#define WINDOW_HEIGHT  720
+#define BUTTON_WIDTH   150
+#define BUTTON_HEIGHT   50
+#define BUTTON_POS_X  1000
+#define BUTTON_POS_Y   100
+
+class QPushButton;
+class Interface: public QWidget{
+    Q_OBJECT
+    public:
+        explicit Interface(QWidget *parent = nullptr);
+        //void setCamImg(QImage img);
+        //void setProcessImg(QImage img);
+        //void setOutPutImg(QImage img);
+        //void setBoardImg(QImage img);
+    private slots:
+
+    private:
+        QPushButton * calibrate_color;
+        QPushButton * calibrate_back;
+        QLabel * state_text;
+        QLabel * img1_text;
+        QLabel * img2_text;
+        QLabel * img3_text;
+        QLabel * img4_text;
+        /*QLabel * cam_img;
+        QLabel * pro_img;
+        QLabel * out_img;
+        QLabel * boa_img;*/
+        
+};
+
+#endif
+
+
+
+
+
+
+
+
+
+
+#include <iostream>
+#include <sstream>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/video.hpp>
+#include <opencv2/core.hpp>
+#include <QApplication>
+#include <QPushButton>
+#include <QImage>
+#include <QPixmap>
+#include "DetectSkin.h"
+#include "BackRemover.h"
+#include "DetectFace.h"
+#include "CountFinger.h"
+#include "Interface.h"
+
+using namespace cv;
+using namespace std;
+
+#define WINDOW_WIDTH  1280
+#define WINDOW_HEIGHT  720
+#define BUTTON_WIDTH   150
+#define BUTTON_HEIGHT   50
+#define BUTTON_POS_X  1000
+#define BUTTON_POS_Y   100
+
+// convert Mat to QImage
+/*QImage MatToQImage(const Mat &mat) {
+    if (mat.type() == CV_8UC1) { // Grayscale
+        QImage img(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_Grayscale8);
+        return img.copy(); 
+    } else if (mat.type() == CV_8UC3) { // BGR
+        QImage img(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_BGR888);
+        return img.copy(); 
+    } else if (mat.type() == CV_8UC4) { // BGRA
+        QImage img(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_ARGB32);
+        return img.copy(); 
+    } else {
+        // Formato não suportado
+        return QImage();
+    }
+}*/
+
+
+
+int main(int argc, char** argv){
+	// Start Qt app
+	QApplication app(argc, argv);
+
+	// Start the main window
+	//Interface main_window;
+	//main_window.show();
+
+	//return app.exec();
+
+	// Open camera
+	VideoCapture capture(0);
+
+	if (!capture.isOpened()){
+		cout << "Error openning the camera" << endl;
+		return 0;
+	}
+
+	// Declare the Matrices
+	Mat frame, foreground, hdMask, fgCount, output;
+
+	// Skin Detector
+	DetectSkin detSkin;
+
+	// Background Remover
+	BackRemover bgRm;
+	
+	// Face Remover
+	DetectFace detFc;	
+
+	// Finger Count
+	CountFinger fgCounter;
+
+	// White Board
+	// Mat board = Mat::ones(Size(1280,720),CV_8UC1);
+
+
+	while(1){
+
+		// Take a frame
+		capture >> frame;
+
+		if (frame.empty()){
+			break;
+		}
+
+		// flip frame
+		flip(frame,frame,1);
+
+		// Draw the ref rectangles
+		detSkin.drawSkinColorRect(frame);
+
+		// get the foreground
+		foreground = bgRm.getForeground(frame);
+		
+		// Remove the Face
+		detFc.removeFaces(frame, foreground);
+
+		// get the handMask
+		hdMask = detSkin.getSkinMask(foreground);
+
+		// Count the number of finger
+		fgCount = fgCounter.findFingCount(hdMask, frame);
+
+
+		// show the frame and the mask
+		//resize(frame,frame,Size(854,480));
+		//imshow("Frame",frame);
+		//resize(foreground,foreground,Size(854,480));
+		//imshow("Foreground", foreground);
+		//resize(hdMask,hdMask,Size(854,480));
+		//imshow("HandMask", hdMask);
+		//resize(fgCount,fgCount,Size(854,480));
+		//imshow("Output", fgCount);
+
+		// resize the images
+		//resize(frame,frame,Size(426,240));
+		//resize(hdMask,hdMask,Size(426,240));
+		//resize(fgCount,fgCount,Size(426,240));
+		//resize(board,board,Size(426,240));
+
+		// set the images on the main window
+		//main.setCamImg(MatToQImage(frame));
+		//main.setProcessImg(MatToQImage(hdMask));
+		//main.setOutPutImg(MatToQImage(fgCount));
+		//main.setBoardImg(MatToQImage(board));
+
+				
+		//get the input from the keyboard
+        int keyboard = waitKey(30);
+        if (keyboard == 'q' || keyboard == 27)
+            break;
+		else if (keyboard == 98)
+			bgRm.calibrate(frame);
+		else if (keyboard == 115)
+			detSkin.calibrate(frame);
+
+	}
+
+
+	return app.exec();
+}
+
+
+
+
+
+
+
+
+
+
+

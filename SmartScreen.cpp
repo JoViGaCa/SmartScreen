@@ -64,6 +64,7 @@ int main(int argc, char** argv){
 
 	// Declare the Matrices
 	Mat frame, foreground, hdMask, fgCount, output;
+	Mat res_frame, res_foreground, res_hdMask, res_fgCount, res_output;
 
 	// Skin Detector
 	DetectSkin detSkin;
@@ -79,6 +80,7 @@ int main(int argc, char** argv){
 
 	// White Board
 	Mat board = Mat::ones(Size(1280,720),CV_8UC1);
+	Mat res_board = Mat::ones(Size(426,240),CV_8UC1);
 
 
 	while(1){
@@ -111,35 +113,38 @@ int main(int argc, char** argv){
 
 		// show the frame and the mask
 		//resize(frame,frame,Size(854,480));
-		imshow("Frame",frame);
+		//imshow("Frame",frame);
 		//resize(foreground,foreground,Size(854,480));
-		imshow("Foreground", foreground);
+		//imshow("Foreground", foreground);
 		//resize(hdMask,hdMask,Size(854,480));
-		imshow("HandMask", hdMask);
+		//imshow("HandMask", hdMask);
 		//resize(fgCount,fgCount,Size(854,480));
-		imshow("Output", fgCount);
-
+		//imshow("Output", fgCount);
+		
 		// resize the images
-		resize(frame,frame,Size(426,240));
-		resize(hdMask,hdMask,Size(426,240));
-		resize(fgCount,fgCount,Size(426,240));
-		resize(board,board,Size(426,240));
+		resize(frame,res_frame,Size(426,240));
+		resize(hdMask,res_hdMask,Size(426,240));
+		resize(fgCount,res_fgCount,Size(426,240));
+		resize(board,res_board,Size(426,240));
 
-		// set the images on the main window
-		main_window.setCamImg(MatToQImage(frame));
-		main_window.setProcessImg(MatToQImage(hdMask));
-		main_window.setOutPutImg(MatToQImage(fgCount));
-		main_window.setBoardImg(MatToQImage(board));
-
+		// update the images on the main window
+		main_window.updateCamImg(MatToQImage(res_frame));
+		main_window.updateProcessImg(MatToQImage(res_hdMask));
+		main_window.updateOutPutImg(MatToQImage(res_fgCount));
+		main_window.updateBoardImg(MatToQImage(res_board));
 				
 		//get the input from the keyboard
         int keyboard = waitKey(30);
         if (keyboard == 'q' || keyboard == 27)
             break;
-		else if (keyboard == 98)
+		else if (main_window.getRemove() == true){
 			bgRm.calibrate(frame);
-		else if (keyboard == 115)
+			main_window.setRemove(false);
+		}
+		else if (main_window.getCalibrate() == true){
 			detSkin.calibrate(frame);
+			main_window.setCalibrate(false);
+		}
 
 	}
 
