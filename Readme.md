@@ -8,4 +8,4 @@ O obejtivo deste projeto é criar um sistema de uma lousa virtual onde é possí
 
 14/08: Foi alterada a interface para que o aplicativo consiga mostrar trodas as etapas do processo e a saída e também foram criados botões para calibrar a câmera e remover o background. Esta imlementação foi realizada com QT.
 
-![Imagem da Interface](https://github.com/JoViGaCa/SmartScreen/img/ImplementacaoDaInterface.png)
+![Imagem da Interface]([https://github.com/JoViGaCa/SmartScreen/img/ImplementacaoDaInterface.png](https://github.com/JoViGaCa/SmartScreen/blob/main/img/ImplementacaoDaInterface.png))
